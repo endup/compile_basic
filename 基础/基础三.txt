@@ -1,0 +1,107 @@
+and or，与或
+
+大小写转换：
+A  01000001   a:01100001
+B  01000010   b:01100010
+C  01000011   c:01100011
+也就是说根据它们的第五位来判断是否为大小写，
+也可以把第五位全换成1变成大写，换成0变成小写
+and 11011111   219-->DB	  or 00100000  32-->20
+assume cs:abc
+a segment
+	db 'abcDEF';52H,58H,36H
+a ends
+abc segment
+start:  
+	mov ax,a	;076a
+	mov ds,ax
+	mov bx,0
+	mov cx,6
+	mov al,20H
+	
+s:	or ds:[bx],al	;把存储的字母转换成小写，and ds:[ba],al-->转换成大写
+	inc bx
+	loop s
+
+	mov ax,4c00H
+        int 21H
+abc ends
+end start
+
+di,si,用法跟bx类似，只是不能拆分成bl，bh
+
+有缺陷的双重循环（由于在内层循环中修改了cx，导致会出现死循环）
+可以先用dx来临时存放cx然后再在推出内层循环的时候把cx的值还原
+更好的做法是把cx的值暂时存放到内存中，因为寄存器的数量有限
+也可以用栈来存放
+assume cs:abc
+a segment
+	db 'abcddddddddddddd'
+	db 'esaddddddddddddd'
+	db 'asdddddddddddddd'
+	db 'kkkddddddddddddd'
+a ends
+abc segment
+start:  
+	mov ax,a	;076a
+	mov ds,ax
+	mov bx,0
+	mov cx,4	;外层循环次数
+	
+s:	mov si,0
+	mov cx,3	;内层循环次数，理论上这个语句会影响到外层
+s0:	mov al,[bx+si]
+	and al,11011111b
+	mov [bx+si],al
+
+	inc si
+	loop s0
+	add bx,16
+	loop s
+
+	mov ax,4c00H
+        int 21H
+abc ends
+end start
+利用栈来修改双重循环
+assume cs:abc
+a segment
+	db 'abcddddddddddddd'
+	db 'esaddddddddddddd'
+	db 'asdddddddddddddd'
+	db 'kkkddddddddddddd'
+	db '                ' ;用来保存cx
+a ends
+stacksg segment
+	dw 0,0,0,0,0,0,0,0	;用栈来存储cx
+stacksg ends
+abc segment
+start:  
+	mov ax,a	;076a
+	mov ds,ax
+	mov bx,0
+	mov cx,4	;外层循环次数
+
+	mov ax,stacksg
+	mov ss,ax
+	mov sp,16
+	
+s:	
+	push cx		;用内存来暂时存放cx数据
+	mov si,0
+	mov cx,3	;内层循环次数，理论上这个语句会影响到外层
+s0:	
+	mov al,[bx+si]
+	and al,11011111b
+	mov [bx+si],al
+
+	inc si
+	loop s0
+	add bx,16
+	pop cx		;读取暂时存放的cx数据
+	loop s
+
+	mov ax,4c00H
+        int 21H
+abc ends
+end start
