@@ -1,0 +1,100 @@
+
+汇编编译.exe文件
+1.在DOX界面的相应目录下执行masm.exe 1.asm	编译1.asm文件成1.obj文件
+2.在DOX界面的相应目录下执行link.exe 1.obj	把1.obj文件转化成1.exe，然后再利用DOSBox打开
+
+1.打开DOSBox，然后mount c: d:\hui\	在d盘根目录创建一个hui文件夹来存放dubug.exe和生成的.exe文件
+2.直接在DOSBox中打开.exe 文件便可执行
+
+
+数据不能以字母开头，编译器不认识
+如：move ax FF12H 错的
+    move ax 0FF12H 对的
+
+
+段结束 ：段名 ends
+程序结束：end
+程序返回：mov ax,4c00H
+	  int 21H
+
+
+完整例子（inc 代表自增）
+bx的寄存器跟ds所对应的段有联系
+cx的寄存器跟loop有联系 
+
+assume cs:abc
+abc segment
+
+start:  mov ax,2000H
+        mov ds,ax
+        mov bx,1000H
+	mov ax,[bx]
+	inc bx
+	inc bx
+	mov [bx],ax
+	inc bx
+	inc bx
+	mov [bx],ax
+	inc bx
+	mov [bx],al
+	inc bx
+	mov [bx],al
+
+        mov ax,4c00H
+        int 21H
+abc ends
+end start
+
+
+关于loop循环
+这里的循环开始的时候会先把cx寄存器里的值减一然后判断其是否大于零，如果大于零则进入循环，等于零则退出
+assume cs:abc
+abc segment
+
+start:  mov ax,2
+        mov cx,11
+s:	add ax,ax
+	loop s
+
+        mov ax,4c00H
+        int 21H
+abc ends
+end start
+
+关于在编译器中的ds偏移地址
+assume cs:abc
+abc segment
+
+start:  mov ax,2000H
+        mov ds,ax
+        mov al,ds:[0]
+	mov bl,ds:[1]
+	mov cl,ds:[2]
+	mov dl,ds:[3]
+
+        mov ax,4c00H
+        int 21H
+abc ends
+end start
+或者是用bx来临时存放然后 mov al,[bx]
+
+
+循环相加
+assume cs:abc
+abc segment
+
+start:  mov ax,0ffffh
+	mov ds,ax
+	mov bx,0
+	mov dx,0
+	mov cx,12
+s:	mov al[bx]
+	mov ah,0
+	mov dx,ax
+	inc bx	;通过修改bx的值来控制读取的数据
+	loop s
+
+        mov ax,4c00H
+        int 21H
+abc ends
+end start

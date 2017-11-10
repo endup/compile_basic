@@ -1,0 +1,156 @@
+mov ax,62627   	AX= F4A3H
+mov ah,31H	AX=31A3H
+mov al,23H 	AX=3123H
+add ax,ax 	AX=6246H
+mov bx,826CH	BX=826CH
+mov cx,ax	CX=6246H
+mov ax,bx	AX=826CH
+add ax,bx	AX=04D8H
+mov al,bh	AX=0482H
+mov ah,bl	AX=6C82H
+add ah,ah 	AX=D882H
+
+add al,6	AX=D806H
+add al,al	AX=D80CH
+mov ax,cx	AX=6246H
+
+
+计算2的4次方
+mov ax,2
+add ax,ax
+add ax,ax
+add ax,ax	AX=0010H
+
+2.2
+
+1、給定段地址为0001H，仅通过变化偏移地址寻址，CPU的寻址范围是0010H到1000FH
+
+
+2、有一个数据存放在内存20000H单元中，现给定段地址为SA，若想用偏位地址寻到此单元，则SA应满足，最小为1001H，最大为2000H
+
+物理地址=段地址*16+偏移地址
+?=0001H*16+0-2**16-1
+0010H+0--0010H+2**16-1
+0010H--1000FH
+
+注：16为十进制数，要转换成十六进制再计算
+20000H=SA*16+0
+20000H=SA*16+FFFFH
+SA最大=20000H/10H=2000H
+SA最小=(20000H-FFFFH)/10H=10001H/10H=1000.1H--->1001H，因为没有.1,而1000H寻不到20000H因此最小为1001H
+
+3.3
+mov ax,1000H
+mov ds,ax
+mov ax,[0]
+mov bx,[2]
+mov cx,[1]
+add bx,[1]
+add cx,[2]
+
+10000H  23
+10001H  11
+10002H  22
+10003H  66
+
+ax=1000H
+ds=ax=1000H
+ax=1123
+bx=6622
+cx=2211
+bx=bx+2211=6622+2211=8833
+cx=cx+6622=2211+6622=8833
+
+3.4
+mov ax,1000H
+mov ds,ax
+mov ax,11316
+mov [0],ax
+mov bx,[0]
+sub bx,[2]
+mov [2],bx
+
+10000H  23
+10001H  11
+10002H  22
+10003H  11
+
+
+ax=1000H
+ds=ax=1000H
+ax=2c34H
+[0]=2c34即 10000H=34 10001H=2c
+bx=2c34 
+bx=2c34-1122=1b12
+[2]=1b12即 10002H=12 10003H=1b
+
+
+CS IP 执行下一条命令的位置
+DS  [0],[1]对应的位置
+SS SP push,pop执行的位置
+
+
+代码段，数据段，栈段三合一
+10000H-1001FH
+mov ax,1000Htt
+mov ss,ax
+mov sp,0020H
+mov ax,cs
+mov ds,ax
+mov ax,[0]
+add ax,[2]
+mov bx,[4]
+add bx,[6]
+push ax
+push bx
+pop ax
+pop bx
+
+073F:0100--011F
+
+
+6.1
+所谓改写程序中的数据应该就是修改cs段对应的数据吧
+(1)
+assume cs:codesg
+codesg segment
+	dw 0123h,0456h,0789h,0abch,0defh,0fedh,0cbah,0987h
+start:
+	mov ax,0
+	mov ds,ax
+	mov bx,0
+	mov cx,8
+s:	mov ax,[bx]
+	mov cs:[bx],ax
+	add bx,2
+	loop:s
+
+	mov ax,4c00h
+	int 21h
+codesg ends
+end start
+
+
+(2)
+assume cs:codesg
+codesg segment
+	dw 0123h,0456h,0789h,0abch,0defh,0fedh,0cbah,0987h
+	dw 0,0,0,0,0,0,0,0,0,0
+start:
+	mov ax,0
+	mov ss,ax
+	mov sp,32
+	
+	mov ax,0
+	mov ds,ax
+	mov bx,0
+	mov cx,8
+s:	push[bx]
+	pop cs:[bx]
+	add bx,2
+	loop s
+
+	mov ax,4c00h
+	int 21h
+codesg ends
+end start

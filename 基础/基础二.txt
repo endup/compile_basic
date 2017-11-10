@@ -1,0 +1,85 @@
+
+dw:是创建一段数据，它会默认占据默认的代码段位置（在代码段中使用数据）
+assume cs:abc
+abc segment
+start:  
+	dw 0123H,0456H,0789H,0abcH,0defH,0fedH,0cbah,0987H
+	mov bx,0
+	mov ax,0
+	mov cx,8
+s:	add ax,cs:[bx]
+	add bx,2
+	loop s
+
+        mov ax,4c00H
+        int 21H
+abc ends
+end start
+
+分段多段，在cpu中每段的位置是从上往下分配的，16位的倍数
+assume cs:code,ds:data,ss:stack
+data segment
+	dw 0123H,0456H,0789H,0abcH,0defH,0fedH,0cbah,0987H
+data ends
+stack segment
+	dw 0,0,0,0,0,0,0,0
+stack ends
+
+code segment
+start:  
+	mov ax,stack
+	mov ss,ax
+	mov sp,16
+	mov ax,data
+	mov ds,ax
+	push ds:[0]
+	push ds:[2]
+	pop ds:[2]
+	pop ds:[0]
+
+        mov ax,4c00H
+        int 21H
+code ends
+end start
+
+从a，b段中读取数据再把其相应位置上的结果相加后放到d段中相应的位置
+assume cs:code
+a segment
+	db 1,2,3,4,5,6,7,8
+a ends
+b segment
+	db 1,2,3,4,5,6,7,8
+b ends
+d segment
+	db 0,0,0,0,0,0,0,0
+d ends
+
+code segment
+start:  
+	mov ax,a	;a=076a
+	mov ss,ax
+	mov sp,0
+	mov cx,4
+
+	mov ax,d	;d=076c
+	mov ds,ax
+	mov bx,0
+
+s:	pop ds:[bx]	;把a中的数据存放到d中
+	add bx,2
+	loop s
+
+	mov ax,b	;b=076b
+	mov es,ax	;用es来读取b中的内容
+	mov cx,8
+	mov bx,0
+
+s1:	mov al,es:[bx]
+	add ds:[bx],al	;把从es的相应位置读取出来的数据写入到d中
+	add bx,1
+	loop s1
+
+        mov ax,4c00H
+        int 21H
+code ends
+end start
