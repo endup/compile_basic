@@ -80,3 +80,119 @@ end start
 
 
 实验九，输出颜色
+在屏幕中间分别显示绿色，绿底红色，白底蓝色的字符串“welcome to masm!”。 
+材料： 
+内存地址空间中，B8000H~BFFFFH共32K的空间，为80*25彩色字符模式的显示缓冲区。向这个地址空间写入数据，写入的内容将立即出现在显示器上。 
+
+在80*25彩色字符模式下，显示器可以显示25行，每行80个字符，每个字符可以有256种属性(背景色、前景色、闪烁、高亮等组合信息)。 
+
+这样，一个字符在显示缓冲区中就要占两个字节，分别存放字符的ASCII码(低位)和属性(高位)。80*25模式下，一屏的内容在显示缓冲区中共占4000个字节。 
+
+显示缓冲区分为8页，每页4KB，显示器可以显示任意一页内容。一般情况下，显示第0页内容。也就是通常情况下，B8000~B8F9F中的4000个字节将出现在屏幕上。
+
+代码一
+assume cs:codesg,ds:data,ss:stack
+
+;定义三个段，分别是代码段codesg,数据段data,栈段stack
+
+data segment
+        db 'welcome to masm!'
+        db 2,24h,71h
+data ends
+
+;数据段有两组数据，分别是需要显示的字符和颜色。期中2,24h,71h分别表;示绿字02h，绿底红字24h，白底蓝字71h  
+
+stack segment
+        db 16 dup(0)
+stack ends
+;大小为16字节,全部初始化为0
+codesg segment
+
+start:
+        mov ax,stack  ;定义栈，多重循环需用到栈
+        mov ss,ax
+        mov sp,0
+;初始化栈顶      
+        mov ax,data     ;定义数据区
+        mov ds,ax
+    ;data表示段地址      
+        mov cx,3     
+        mov ax,0B800H  ;缓冲区的第一页首地址
+        mov es,ax
+        mov si,10h     ;si偏移至存储颜色的地址        
+        mov ax,0        
+
+ s:
+       mov ah,ds:[si]       ;用ah保存字符颜色
+      push cx      ;将cx,si入栈保存
+      push si   
+      mov cx,16
+      mov si,0
+      mov bx,0
+      mov di,1
+
+ inputCh:              ;输出一行welcome to masm!
+        mov al,[bx]
+        mov es :[bx + si],al   ;写字符
+        ;其中al表示的是字符
+        mov es:[bx + di],ah    ;写字符颜色,其中ah表示的是
+        ;一种颜色
+        inc bx          ;遍历字符串
+        inc si
+        inc di
+    loop inputCh
+
+        pop si      ;si出栈
+        inc si     ;指向下一个颜色
+        pop cx
+        mov dx,es   ;接下来三条指令将es指向下一行
+        add dx,0ah  
+        mov es,dx
+
+    loop s
+
+    s1:                 ;最初程序执行太快，看不到现象，加一个死循环，用于看结果
+        jmp short s1
+
+codesg ends
+end start
+
+
+代码二
+assume cs:codesg,ds:datasg
+
+datasg segment
+    db 'welcom to masm!'
+datasg ends
+
+codesg segment
+start:
+    ;move data address to ds register
+    mov ax, datasg
+    mov ds, ax
+    
+    ;display area is 0xb8000h - 0xbffffh, move data to this area
+    mov ax, 0b872h ;with hex, must a 0 before b800h
+    mov es, ax
+    mov si, 0
+    mov bx, 0
+    mov cx, 16
+s:
+    mov al, ds:[bx]
+    mov es:[si], al
+    mov es:[si + 160], al ; newline
+    mov es:[si + 320], al ; newline
+    mov al, 02h;green property:00000010 = 2 
+    mov es:[si + 1], al
+    mov al, 24h;backgroud green, word red, 00100100 = 36 = 24h
+    mov es:[si + 161], al
+    mov al, 71h;background white, word green, 01110001 = 71h
+    mov es:[si + 321], al
+    add bx, 1
+    add si, 2
+    loop s
+    
+    mov ax,4c00h
+    int 21h
+codesg ends
+end start
