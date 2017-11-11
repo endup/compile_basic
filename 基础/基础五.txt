@@ -1,0 +1,81 @@
+
+offset操作符,取得标号的偏移地址
+assume cs:codesg
+codesg segment
+start:
+	mov ax,offset start	;相当于mov ax,0
+	s:mov ax,offset s	;相当于mov ax,3
+
+jmp 指令(无条件跳转)
+1.jmp short 标号，转到标号处执行指令,段内短转移，8位
+2.jmp near ptr,跟jmp short 标号类似，段内近转移，16位
+3.jmp fat ptr,同时修改cs和ip
+assume cs:codesg
+codesg segment
+start: 	mov ax,0
+	mov bx,0
+	jmp far ptr s
+	db 256 dup(0)
+	s: add ax,1
+	inc ax
+codesg ends
+end start
+
+4.jmp word ptr (段内转移)
+mov ax,0123H
+mov ds:[0],ax
+jmp word ptr ds:[0]
+运行后cs不变，ip指向了0123H
+
+5.jmp dword ptr （段间转移）
+mov ax,0123H
+mov ds:[0],ax
+mov word ptr ds:[2],0
+jmp dword ptr ds:[0]
+
+结果是(cs)=0		高位的值
+      (ip)=0123H	低位的值
+
+
+
+jcxz指令,有条件跳转
+当cx==0时跳转，当cx!=0时不跳转,而且是短转移
+相当于
+if((cx)==0){
+	jmp short 标号
+}
+
+
+loop指令,短转移，八位，循环次数为cx的值，每次循环前都先把cx值减一，如果不为0则执行循环
+相当于 
+(cx)--;
+if((cx)!=0)
+	jmp short 标号
+
+
+实验八，奇怪的跳转
+该程序能正常退出吗
+assume cs:codesg
+codesg segment
+	mov ax,4c00h
+	int 21h
+start:	mov ax,0
+	s:nop
+	  nop
+	mov di,offset s
+	mov si,offset s2
+	mov ax,cs:[si]
+	mov cs:[di],ax
+
+	so:jmp short s
+
+	s1:mov ax,0
+	int 21h
+	mov ax,0
+
+	s2:jmp short s1
+codesg ends
+end start
+
+
+实验九，输出颜色

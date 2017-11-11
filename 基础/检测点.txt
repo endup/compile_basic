@@ -154,3 +154,92 @@ s:	push[bx]
 	int 21h
 codesg ends
 end start
+
+
+9.1
+(1)若要jmp执行后，cs:ip指向程序的第一条指令,在data段中应该定义哪些数据
+assume cs:code
+data segment
+	dw 0,0	;[bx+1]指向的是这个空间的第二个字，只要这个字设置为0或者是offset start，其他都能乱来
+data ends
+code segment
+start:	
+	mov ax,data
+	mov ds,ax
+	mov bx,0
+	jmp word ptr [bx+1]
+
+	mov ax,4c00h
+	int 21h
+code ends
+end start
+
+(2)jmp执行后，cs:ip指向程序的第一条指令
+assume cs:code
+data segment
+	dd 12345678H
+data ends
+code segment
+start:	
+	mov ax,data
+	mov ds,ax
+	mov bx,0
+	mov [bx],0		;这里的答案有很多，也可以是4然后下面是ax
+	mov [bx+2],cs		;
+	jmp dword ptr ds:[0]
+
+	mov ax,4c00h
+	int 21h
+code ends
+end start
+
+(3)用Debug查看内存，结果如下：
+2000:1000 BE 00 06 00 00 00 ....
+则此时，cpu执行指令
+mov ax,2000H
+mov es,ax
+jmp dword ptr es:[1000H]
+后，(cs)=0006H (ip)=00BEH
+
+9.2
+补全程序，利用jcxz指令，实现在内存为2000H中查找第一个值为0的字节，找到后将其偏移地址存储在dx中
+assume cs:code
+code segment
+start:	
+	mov ax,2000H
+	mov ds,ax
+	mov bx,0
+	s:mov cl,[bx]
+	mov ch,[bx]	;这个直接把ch置零也是可以的
+	jcxz short ok
+	inc bx
+	jmp short s
+
+	ok:mov dx,bx
+	mov ax,4c00H
+	int 21h
+code ends
+end start
+
+
+9.3
+补全程序，利用loop指令，实现在内存为2000H中查找第一个值为0的字节，找到后将其偏移地址存储在dx中
+assume cs:code
+code segment
+start:	
+	mov ax,2000H
+	mov ds,ax
+	mov bx,0
+	s:mov cl,[bx]
+	mov ch,0	;这个直接把ch置零也是可以的
+	inc [bx]
+	inc cl		;也可以是inc cx
+	loop s
+
+	ok:dec bx	;自减一
+	mov dx,bx
+
+	mov ax,4c00H
+	int 21h
+code ends
+end start
