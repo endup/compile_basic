@@ -62,18 +62,19 @@ codesg segment
 start:	mov ax,0
 	s:nop
 	  nop
-	mov di,offset s
-	mov si,offset s2
-	mov ax,cs:[si]
+	mov di,offset s		;0008
+	mov si,offset s2	;0020
+	mov ax,cs:[si]		;f6e8
 	mov cs:[di],ax
 
-	so:jmp short s
+	so:jmp short s		;0008
 
 	s1:mov ax,0
 	int 21h
 	mov ax,0
 
-	s2:jmp short s1
+	s2:jmp short s1		;0018   EBF6,也就是往上偏移10个字节，将这个已经转换成为机器码存放了，然后
+				;在上面中把值替换的时候这个语句的含义就是向上跳10个字节，然后在S中向上10个字节刚好是mov ax,4c00h,所以程序能正常退出
 codesg ends
 end start
 
