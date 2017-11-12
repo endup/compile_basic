@@ -1,0 +1,44 @@
+
+ret指令用栈中的数据来修改ip的内容，
+(IP)=((ss)*16+(sp))
+(sp)=(sp)+2
+
+retf指令用栈中的数据来修改CS和IP的内容
+(IP)=((ss)*16+(sp))
+(sp)=(sp)+2
+(CS)=((ss)*16+(sp))
+(sp)=(sp)+2
+例子
+assume cs:codesg
+stack segment
+	db 16 dup (0)
+stack ends
+
+codesg segment
+	mov ax,4c00h
+	int 21H
+start:
+	mov ax,stack
+	mov ss,ax
+	mov sp,16
+	mov ax,0
+	push cs
+	push ax
+
+	mov bx,0
+	retf		;把出栈的数据放到cs，ip中
+codesg ends
+end start
+
+call指令，不能实现段转移，call 标号
+call一般配合ret使用，先用call把相应位置的IP或IP和CS入栈，然后等处理完后用ret或retf还原
+1.将当前的IP或CS和IP入栈
+2.转移（jmp）
+
+call 16位寄存器			段内，跟call类似
+call word ptr 内存单元地址	段内，跟call类似
+call dword ptr 内存单元地址	段间，跟call far ptr类似
+
+call far ptr 标号,这个跟call差不多，段间转移，主要是配合retf使用。
+先把CS入栈，然后将IP入栈
+然后把CS和IP指向标号所在地址
