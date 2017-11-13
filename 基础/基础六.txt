@@ -42,3 +42,21 @@ call dword ptr 内存单元地址	段间，跟call far ptr类似
 call far ptr 标号,这个跟call差不多，段间转移，主要是配合retf使用。
 先把CS入栈，然后将IP入栈
 然后把CS和IP指向标号所在地址
+
+
+mul乘法
+一个八位和一个十六位相乘可以把八位转换成十六位再乘
+两个八位的相乘:
+mul byte ptr ds:[0]
+就是：(ax)=(al)*((ds)*16+0)
+
+两个十六位的相乘：
+mul word ptr [bx+si+8]
+就是：(ax)=(ax)*((ds)*16+(bx)+(si)+8) 结果的低十六位
+	(dx)=(ax)*((ds)*16+(bx)+(si)+8)	结果的高十六位
+100*10000
+mov ax,100
+mov bx,10000
+mul bx
+
+(ax)=4240H,(dx)=000FH
