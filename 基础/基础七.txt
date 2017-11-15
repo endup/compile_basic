@@ -1,0 +1,123 @@
+标志寄存器flag
+15 14 13 12 11 10  9  8  7  6  5 4  3  2  1 0
+            OF DF  IF TF SF ZF   AF    PF   CF
+ZF,上一次运行的结果，如果为零则ZF为1，如果不为零则ZF为0
+mov ax,1
+sub ax,1
+执行后，(ax)=0，ZF=1
+
+PF，奇偶标志位，指令执行后，结果的所有二进制位中1的个数，
+为偶数，PF=1，为奇数，PF=0
+
+SF，符号标志位，指令执行后，若结果为负则SF=1，若结果为正，则SF=0
+
+CF，进位标志位，（相对于无符号数来说）这个是用来保存运算中丢失的进位，也能标志上次计算是否借位
+
+OF，溢出标志位，（相对于有符号数来说）产生溢出也就是污染了符号位，这个时候OF=1
+
+DF,方向标志位，控制每次操作后si,di的递增，
+DF=0：每次操作后si,di递增
+DF=1：每次操作后si,di递减
+cld指令：将标志寄存器的DF位置设置为0
+std指令：将标志寄存器的DF位置设置为1
+
+movsb和movsw一般配合rep使用
+rep的作用是根据cx的值，重复执行后面的串传送指令
+
+movsb（传送一个字节）		movsw(传送一个字，相应的si和di每次加二或减二)
+将ds:si指向的内存单元中的字节送入es:di中然后根据标志为DF的值
+将si和di递增或递减
+1.((es)*16+(di))=((ds)*16+(si))
+2.DF=0：每次操作后si,di递增
+  DF=1：每次操作后si,di递减
+
+例子1：
+assume cs:code
+data segment
+	db 'welcome to masm!'
+	db 16 dup (0)
+data ends
+code segment
+start:	mov ax,data
+	mov ds,ax
+	mov si,0	;si指向数据源
+	mov es,ax
+	mov di,16	;di指向目的
+	mov cx,16	;循环次数
+	
+	cld		;设置DF=0，si，di每次递增
+	rep movsb
+	
+	mov ax,4C00H
+	int 21h
+code ends
+end start
+
+例子2:
+assume cs:code
+data segment
+	db 16 dup (0)
+data ends
+code segment
+start:	mov ax,0F000H
+	mov ds,ax
+	mov si,0ffffH	;ds:si指向源串 f000:ffff
+	mov ax,data
+	mov es,ax
+	mov di,15	;es:di指向目的，data15
+	mov cx,16
+
+	std		;设置DF=1，逆向传送
+	rep movsb
+	
+	mov ax,4C00H
+	int 21h
+code ends
+end start
+
+
+adc，带进位加法指令，把CF也用在了运算中
+adc ax,bx
+(ax)=(ax)+(bx)+CF
+
+assume cs:codesg
+codesg segment
+
+start:
+	;计算1EF000H+201000H，结果放在ax(高十六位),和bx(低十六位)中
+	mov ax,0F000H
+	add ax,1000H
+	mov bx,ax	;存放低十六位
+	mov ax,001EH
+	adc ax,0020H	;理论上来说这样就能计算了
+
+	mov ax,4c00h
+	int 21h
+
+codesg ends
+end start
+
+sbb 带借位减法，利用了CF位上的高位值
+sbb ax,bx
+(ax)=(ax)-(bx)-CF
+
+计算003E1000H-00202000H，结果放在ax,bx中
+mov bx,1000H
+mov ax,003EH
+sub bx,2000H
+sbb ax,0020H
+
+cmp，比较指令，不保存结果，只影响标志位的值
+如：cmp ax,ax  -->(ax)-(ax),不保存结果
+执行指令后ZF=1，PF=1，SF=0，CF=0，OF=0
+
+根据比较结果的转移指令很多j;jmp,e:equal,b:below,a:above
+je	等于则转移	ZF=1
+jne	不等于则转移	ZF=0
+jb	低于则转移	CF=1
+jnb	不低于则转移	CF=0
+ja	高于则转移	CF=0,ZF=0
+jna	不高于则转移	CF=1或ZF=1
+
+pushf:将标志寄存器的值压入栈
+popf：从栈中读取数据放入标志寄存器中
